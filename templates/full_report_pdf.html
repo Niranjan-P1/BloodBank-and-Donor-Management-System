@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BloodBank Full Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            color: #dc3545;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Donor List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Blood Group</th>
+                <th>City</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for donor in donors %}
+            <tr>
+                <td>{{ donor.name }}</td>
+                <td>{{ donor.blood_group }}</td>
+                <td>{{ donor.city }}</td>
+                <td>{{ donor.contact }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No donors found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Blood Stock</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Blood Group</th>
+                <th>Units Available</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in blood_stock %}
+            <tr>
+                <td>{{ stock.blood_group }}</td>
+                <td>{{ stock.units }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No stock data available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Blood Requests</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Blood Group</th>
+                <th>City</th>
+                <th>Contact</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in blood_requests %}
+            <tr>
+                <td>{{ request.name }}</td>
+                <td>{{ request.blood_group }}</td>
+                <td>{{ request.city }}</td>
+                <td>{{ request.contact }}</td>
+                <td>{{ request.status }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No blood requests found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

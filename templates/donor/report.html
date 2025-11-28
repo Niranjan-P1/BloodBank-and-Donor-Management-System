@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(to right, #ffe6e6, #ffffff);
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+        }
+        .option-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            height: 100%;
+        }
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .option-card input {
+            display: none;
+        }
+        .option-card.active {
+            border: 2px solid #dc3545;
+            background-color: #ffe6e6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+<!-- Put this inside <head> (or a global CSS file) so it applies site-wide -->
+<style>
+  /* Navbar form + logout alignment helpers */
+  .navbar-nav.align-items-center { align-items: center; }
+  .navbar-nav .nav-item form { margin: 0; display: flex; align-items: center; }
+  .navbar-nav .nav-item .btn-link { color: inherit; text-decoration: none; }
+  /* Ensure nav links are vertically centered like the toggler */
+  .navbar-nav .nav-link, .navbar-brand { display:flex; align-items:center; height: 100%; padding-top: .55rem; padding-bottom: .55rem; }
+  /* remove default button look for logout */
+  .nav-logout-btn { padding: 0; margin: 0; border: none; background: transparent; color: inherit; }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{% url 'home' %}">🩸 BloodBank</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'register_donor' %}">Register Donor</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'blood_request' %}">Blood Request</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'reports_page' %}">Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About Us</a></li>
+
+        {% if user.is_authenticated %}
+          {% if user.is_staff %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'manage_requests' %}">Manage Requests</a></li>
+          {% endif %}
+
+          <!-- Logout as POST but styled like a nav-link -->
+          <li class="nav-item">
+            <form method="post" action="{% url 'logout' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="nav-link nav-logout-btn btn btn-link p-0 m-0 align-middle" style="color: #fff;">
+                Logout
+              </button>
+            </form>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Particle background -->
+    <div id="particles-js"></div>
+
+    <!-- Report content -->
+    <div class="content container">
+        <div class="card p-4">
+            <h2 class="text-center text-danger">📊 Generate BloodBank Report</h2>
+            <form method="get" action="{% url 'export_filtered_report_pdf' %}">
+                <div class="mb-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" id="end_date" name="end_date" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Include Sections:</label>
+                    <div class="row g-3">
+                        <!-- Donors -->
+                        <div class="col-md-4">
+                            <div class="option-card text-center p-3 rounded shadow-sm">
+                                <input type="checkbox" name="include_donors" value="1">
+                                <div class="fs-2">📋</div>
+                                <h6>Donors List</h6>
+                            </div>
+                        </div>
+                        <!-- Stock -->
+                        <div class="col-md-4">
+                            <div class="option-card text-center p-3 rounded shadow-sm">
+                                <input type="checkbox" name="include_stock" value="1">
+                                <div class="fs-2">🩸</div>
+                                <h6>Blood Stock</h6>
+                            </div>
+                        </div>
+                        <!-- Requests -->
+                        <div class="col-md-4">
+                            <div class="option-card text-center p-3 rounded shadow-sm">
+                                <input type="checkbox" name="include_requests" value="1">
+                                <div class="fs-2">🧾</div>
+                                <h6>Blood Requests</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-danger w-100">Download Report PDF</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Particles.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+    <script>
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 90 },
+                "color": { "value": "#ff0000" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.7 },
+                "size": { "value": 5 },
+                "line_linked": { "enable": true, "distance": 150, "color": "#cc0000", "opacity": 0.5, "width": 1 },
+                "move": { "enable": true, "speed": 2 }
+            }
+        });
+
+        // Toggle active state + checkbox
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const checkbox = card.querySelector('input');
+                checkbox.checked = !checkbox.checked;
+                card.classList.toggle('active', checkbox.checked);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+1. Open Command Prompt / PowerShell
+
+Navigate to your project folder.
+If your project is in C:\Windows\System32\bloodbank, run:
+
+cd C:\Windows\System32\bloodbank
+
+2. Activate Virtual Environment
+venv\Scripts\activate
+
+
+After activation, you’ll see (venv) in front of your path.
+
+3. Apply Migrations (Database Setup)
+
+Run:
+
+python manage.py makemigrations
+python manage.py migrate
+
+
+This creates tables for your models (Donor, BloodStock, etc.) in the SQLite database.
+
+4. Create a Superuser (for Admin Panel)
+
+Run:
+
+python manage.py createsuperuser
+
+
+It will ask for:
+
+Username
+
+Email (optional, press Enter)
+
+Password
+
+Now you can log in at:
+👉 http://127.0.0.1:8000/admin
+
+5. Start Development Server
+python manage.py runserver
+
+
+You’ll see something like:
+
+Starting development server at http://127.0.0.1:8000/
+
+
+Click that link in your browser. 🎉

@@ -1,0 +1,366 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BloodBank Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { 
+      background: #f8f9fa; 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 0;
+    }
+
+    /* Interactive background */
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      background: linear-gradient(to right, #ffe6e6, #ffffff);
+    }
+
+    .navbar { margin-bottom: 20px; }
+    .card { border-radius: 12px; }
+    .footer { text-align: center; margin-top: 40px; padding: 10px; color: #666; }
+
+    /* Hover effect for cards */
+    .card:hover {
+      transform: translateY(-5px);
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    /* Stats cards colors */
+    .stat-card-total { background-color: #dc3545; color: white; }
+    .stat-card-groups { background-color: #0d6efd; color: white; }
+    .stat-card-requests { background-color: #198754; color: white; }
+
+    /* Navbar form + logout alignment */
+    .navbar-nav.align-items-center { align-items: center; }
+    .navbar-nav .nav-item form { margin: 0; display: flex; align-items: center; }
+    .nav-logout-btn { padding: 0; margin: 0; border: none; background: transparent; color: inherit; }
+
+    /* Chatbot styles */
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 340px;
+      height: 500px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
+      z-index: 1000;
+    }
+    #chatbot-header {
+      background: #dc3545;
+      color: white;
+      padding: 12px;
+      font-weight: bold;
+      text-align: center;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+    #chatbot-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .message { margin: 5px 0; padding: 8px 10px; border-radius: 8px; }
+    .user-message { background: #f1f1f1; text-align: right; }
+    .bot-message { background: #ffe6e6; text-align: left; }
+
+    #chatbot-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    #chatbot-input input {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      border-radius: 0;
+    }
+    #chatbot-input button {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    #chatbot-input button:hover { background: #b02a37; }
+
+    /* FAQ Buttons */
+    .faq-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .faq-btn:hover {
+      background-color: #b02a37;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Interactive Background -->
+  <div id="particles-js"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="{% url 'home' %}">🩸 BloodBank</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'register_donor' %}">Register Donor</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'blood_request' %}">Blood Request</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'reports_page' %}">Reports</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About Us</a></li>
+
+          {% if user.is_authenticated %}
+            {% if user.is_staff %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'manage_requests' %}">Manage Requests</a></li>
+            {% endif %}
+            <li class="nav-item">
+              <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="nav-link nav-logout-btn btn btn-link p-0 m-0 align-middle" style="color: #fff;">Logout</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Search Donors -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white"><h5 class="mb-0">🔍 Search Donors</h5></div>
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-4"><input type="text" name="name" placeholder="Search by Name" class="form-control" value="{{ request.GET.name }}"></div>
+          <div class="col-md-4">
+            <select name="blood_group" class="form-select">
+              <option value="">Filter by Blood Group</option>
+              {% for bg in blood_groups %}
+                <option value="{{ bg }}" {% if request.GET.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4"><input type="text" name="city" placeholder="Filter by City" class="form-control" value="{{ request.GET.city }}"></div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-danger">Search</button>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Reset</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm stat-card-total">
+          <div class="card-body"><h5>Total Donors</h5><h3>{{ total_donors }}</h3></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm stat-card-groups">
+          <div class="card-body"><h5>Available Groups</h5><h3>{{ total_groups }}</h3></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm stat-card-requests">
+          <div class="card-body"><h5>Total Requests</h5><h3>{{ total_requests }}</h3></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donor List -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center"><h5 class="mb-0">📋 Donor List</h5></div>
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr><th>Name</th><th>Blood Group</th><th>City</th><th>Contact</th></tr>
+          </thead>
+          <tbody>
+            {% for donor in donors %}
+              <tr><td>{{ donor.name }}</td><td>{{ donor.blood_group }}</td><td>{{ donor.city }}</td><td>{{ donor.contact }}</td></tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">No donors found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Blood Stock -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white"><h5 class="mb-0">🩸 Blood Stock</h5></div>
+      <div class="card-body">
+        <table class="table table-bordered text-center">
+          <thead class="table-light"><tr><th>Blood Group</th><th>Units Available</th></tr></thead>
+          <tbody>
+            {% for stock in blood_stock %}
+              <tr><td>{{ stock.blood_group }}</td><td>{{ stock.units }}</td></tr>
+            {% empty %}
+              <tr><td colspan="2" class="text-muted">No stock data available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Blood Requests -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white"><h5 class="mb-0">🧾 Recent Blood Requests</h5></div>
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead><tr><th>Name</th><th>Blood Group</th><th>City</th><th>Contact</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for request in blood_requests %}
+              <tr>
+                <td>{{ request.name }}</td><td>{{ request.blood_group }}</td><td>{{ request.city }}</td><td>{{ request.contact }}</td>
+                <td>
+                  {% if request.status == "Pending" %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  {% elif request.status == "Approved" %}
+                    <span class="badge bg-success">Approved</span>
+                  {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted">No blood requests found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer"><p>© 2025 BloodBank Project. All rights reserved.</p></div>
+
+  <!-- 💬 Chatbot Widget -->
+  <div id="chatbot-container">
+    <div id="chatbot-header">🤖 BloodBank FAQ Bot</div>
+    <div id="chatbot-messages">
+      <div class="message bot-message">
+        Hello! I'm here to help with common blood bank questions. Try asking about donation eligibility, blood requests, or available stock.
+      </div>
+    </div>
+
+    <!-- Clickable FAQ Buttons -->
+    <div id="chatbot-faq" style="padding: 10px; max-height: 120px; overflow-y: auto; border-top: 1px solid #ccc;">
+      <strong>Frequently Asked Questions:</strong>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+        <button class="faq-btn" onclick="clickFAQ('how can i register as a donor')">Register as Donor</button>
+        <button class="faq-btn" onclick="clickFAQ('how often can i donate blood')">Donation Frequency</button>
+        <button class="faq-btn" onclick="clickFAQ('where can i see available blood stock')">Available Blood Stock</button>
+        <button class="faq-btn" onclick="clickFAQ('how do i request blood')">Request Blood</button>
+        <button class="faq-btn" onclick="clickFAQ('can i track my blood request status')">Track Request</button>
+        <button class="faq-btn" onclick="clickFAQ('what blood groups are supported')">Supported Blood Groups</button>
+        <button class="faq-btn" onclick="clickFAQ('help')">Help</button>
+      </div>
+    </div>
+
+    <div id="chatbot-input">
+      <input type="text" id="userInput" placeholder="Ask me something..." onkeypress="handleKeyPress(event)">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+  <script>
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": 90 },
+        "color": { "value": "#ff0000" },
+        "shape": { "type": "circle" },
+        "opacity": { "value": 0.7 },
+        "size": { "value": 5 },
+        "line_linked": {
+          "enable": true,
+          "distance": 150,
+          "color": "#cc0000",
+          "opacity": 0.5,
+          "width": 1
+        },
+        "move": { "enable": true, "speed": 2 }
+      }
+    });
+
+    const chatbotFAQ = {
+      "how can i register as a donor": "Go to the Register Donor page and fill in your details.",
+      "can i donate if i am under 18": "No, donors must be at least 18 years old.",
+      "how often can i donate blood": "Every 3 months for men, and every 4 months for women.",
+      "eligibility": "You must be at least 18 years old, weigh over 50kg, and be in good health.",
+      "where can i see available blood stock": "On the Home page under the Blood Stock section.",
+      "what blood groups are available": "Check the Blood Stock table on the Home page for current availability.",
+      "blood stock": "Current blood stock levels are shown on the Home page.",
+      "how do i request blood": "Use the Blood Request page to submit your request with patient details.",
+      "can i track my blood request status": "Yes, check the Recent Blood Requests table on the Home page.",
+      "what happens after my request is approved": "The blood bank will contact you with collection details.",
+      "why was my request rejected": "Requests may be rejected if stock is unavailable or details are incomplete.",
+      "how much blood is taken during donation": "Usually about 350–450 ml, safe for healthy adults.",
+      "what blood groups are supported": "A+, A-, B+, B-, O+, O-, AB+, AB-",
+      "who approves blood requests": "Only admins can approve or reject requests.",
+      "how do i contact the blood bank": "Use the About Us page contact form for inquiries.",
+      "help": "I can answer questions about: donation eligibility, blood requests, available stock, and general blood bank info."
+    };
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const userText = input.value.trim().toLowerCase();
+      if (!userText) return;
+      addMessage(userText, "user-message");
+      input.value = "";
+      let reply = "I'm not sure about that. Try asking about donation eligibility, blood requests, or available stock. Type 'help' for more options.";
+      if (chatbotFAQ[userText]) { reply = chatbotFAQ[userText]; }
+      else { for (let q in chatbotFAQ) { if (userText.includes(q)) { reply = chatbotFAQ[q]; break; } } }
+      setTimeout(() => { addMessage(reply, "bot-message"); }, 500);
+    }
+
+    function addMessage(text, className) {
+      const messages = document.getElementById("chatbot-messages");
+      const msg = document.createElement("div");
+      msg.className = "message " + className;
+      msg.textContent = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
+
+    function clickFAQ(question) { document.getElementById("userInput").value = question; sendMessage(); }
+  </script>
+
+</body>
+</html>
